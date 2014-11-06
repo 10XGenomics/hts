@@ -11,6 +11,7 @@ import (
 	"code.google.com/p/biogo.bam/bgzf/gzip"
 	"io"
 	"io/ioutil"
+        "errors"
 )
 
 type Reader struct {
@@ -138,7 +139,7 @@ func (bg *Reader) Read(p []byte) (int, error) {
 			} else {
 				bg.offset.File += int64(bs)
 				if bg.offset.File != bg.cr.n {
-					bg.err = ErrBlockSizeMismatch
+                                        bg.err =  errors.New("bgzf: use of closed writer");
 					break
 				}
 			}
