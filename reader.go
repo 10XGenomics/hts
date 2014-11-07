@@ -12,7 +12,7 @@ import (
 )
 
 type Reader struct {
-	r *bgzf.Reader
+	r io.Reader
 	h *Header
 }
 
@@ -30,6 +30,22 @@ func NewReader(r io.Reader) (*Reader, error) {
 		},
 	}
 	err = br.h.read(br.r)
+	if err != nil {
+		return nil, err
+	}
+	return br, nil
+}
+
+func NewUncompressedReader(r io.Reader) (*Reader, error) {
+	br := &Reader{
+		r: r,
+		h: &Header{
+			seenRefs:   set{},
+			seenGroups: set{},
+			seenProgs:  set{},
+		},
+	}
+        err := br.h.read(br.r)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +165,7 @@ func readCigarOps(br *binaryReader, n uint16) []CigarOp {
 }
 
 type errReader struct {
-	r   *bgzf.Reader
+	r   io.Reader
 	n   int
 	err error
 }
