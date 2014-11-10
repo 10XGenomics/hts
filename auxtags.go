@@ -41,7 +41,7 @@ var (
 
 // parseAux examines the data of a SAM record's OPT fields,
 // returning a slice of Aux that are backed by the original data.
-func parseAux(aux []byte) (aa []Aux) {
+func parseAux(aux []byte, aa []Aux) []Aux {
 	for i := 0; i+2 < len(aux); {
 		t := aux[i+2]
 		switch j := jumps[t]; {
@@ -77,7 +77,7 @@ func parseAux(aux []byte) (aa []Aux) {
 			panic(fmt.Sprintf("bam: unrecognised optional field type: %q", t))
 		}
 	}
-	return
+	return aa
 }
 
 // buildAux constructs a single byte slice that represents a slice of Aux.

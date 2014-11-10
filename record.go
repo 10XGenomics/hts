@@ -13,18 +13,43 @@ import (
 
 // Record represents a SAM/BAM record.
 type Record struct {
-	Name    string
-	Ref     *Reference
-	Pos     int
-	MapQ    byte
-	Cigar   Cigar
-	Flags   Flags
-	MateRef *Reference
-	MatePos int
-	TempLen int
-	Seq     NybbleSeq
-	Qual    []byte
-	AuxTags []Aux
+	Name          string
+	Ref           *Reference
+	Pos           int
+	MapQ          byte
+	Cigar         Cigar
+	Flags         Flags
+	MateRef       *Reference
+	MatePos       int
+	TempLen       int
+	Seq           NybbleSeq
+	Qual          []byte
+	AuxTags       []Aux
+	/* Store an arena of memory that we can use to parse the rest of the data
+	 * in this record to avoid too many small allocations
+	 */
+	buffer        [1024 * 1024]byte
+	buffer_offset int
+	aux_buffer    [1024]Aux
+}
+
+/*
+ * Allocate some bytes from the arena built into each record.
+ */
+func (r *Record) buf_alloc(length int) []byte {
+	if r.buffer_offset+length > len(r.buffer) {
+		panic("Out of buffer space.")
+	}
+	answer := r.buffer[r.buffer_offset : r.buffer_offset+length]
+	r.buffer_offset += length
+	return answer
+}
+
+/*
+ * Clear out the arena in each record.
+ */
+func (r *Record) buf_reset() {
+	r.buffer_offset = 0
 }
 
 // NewRecord returns a Record, checking for consistency of the provided

@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"unsafe"
 )
 
 type Reader struct {
@@ -45,7 +46,7 @@ func NewUncompressedReader(r io.Reader) (*Reader, error) {
 			seenProgs:  set{},
 		},
 	}
-        err := br.h.read(br.r)
+	err := br.h.read(br.r)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +78,10 @@ var (
 	bamFixedRemainder = binary.Size(bamRecordFixed{}) - lenFieldSize
 )
 
-func (br *Reader) Read() (*Record, error) {
+/*
+ * Read data into a record.  Return a pointer to the same record
+ */
+func (br *Reader) Read(rec *Record) (*Record, error) {
 	r := errReader{r: br.r}
 	bin := binaryReader{r: &r}
 
@@ -85,7 +89,7 @@ func (br *Reader) Read() (*Record, error) {
 	blockSize := int(bin.readInt32())
 	r.n = 0 // The blocksize field is not included in the blocksize.
 
-	var rec Record
+	rec.buf_reset()
 
 	refID := bin.readInt32()
 	rec.Pos = int(bin.readInt32())
@@ -103,7 +107,7 @@ func (br *Reader) Read() (*Record, error) {
 	}
 
 	// Read variable length data.
-	name := make([]byte, nLen)
+	name := rec.buf_alloc(int(nLen))
 	if nf, _ := r.Read(name); nf != int(nLen) {
 		return nil, errors.New("bam: truncated record name")
 	}
@@ -114,23 +118,24 @@ func (br *Reader) Read() (*Record, error) {
 		return nil, r.err
 	}
 
-	seq := make(nybblePairs, (lSeq+1)>>1)
-	if nf, _ := r.Read(seq.Bytes()); nf != int((lSeq+1)>>1) {
+	seq := rec.buf_alloc(int((lSeq + 1) >> 1))
+	if nf, _ := r.Read(seq); nf != int((lSeq+1)>>1) {
 		return nil, errors.New("bam: truncated sequence")
 	}
-	rec.Seq = NybbleSeq{Length: int(lSeq), Seq: seq}
+	rec.Seq = NybbleSeq{Length: int(lSeq), Seq: *(*nybblePairs)(unsafe.Pointer(&seq))}
 
-	rec.Qual = make([]byte, lSeq)
+	rec.Qual = rec.buf_alloc(int(lSeq))
+
 	if nf, _ := r.Read(rec.Qual); nf != int(lSeq) {
 		return nil, errors.New("bam: truncated quality")
 	}
 
-	auxTags := make([]byte, blockSize-r.n)
+	auxTags := rec.buf_alloc(blockSize - r.n)
 	r.Read(auxTags)
 	if r.n != blockSize {
 		return nil, errors.New("bam: truncated auxilliary data")
 	}
-	rec.AuxTags = parseAux(auxTags)
+	rec.AuxTags = parseAux(auxTags, rec.aux_buffer[0:0])
 
 	if r.err != nil {
 		return nil, r.err
@@ -142,15 +147,19 @@ func (br *Reader) Read() (*Record, error) {
 			return nil, errors.New("bam: reference id out of range")
 		}
 		rec.Ref = br.h.Refs()[refID]
+	} else {
+		rec.Ref = nil
 	}
 	if nextRefID != -1 {
 		if nextRefID < -1 || nextRefID >= refs {
 			return nil, errors.New("bam: mate reference id out of range")
 		}
 		rec.MateRef = br.h.Refs()[nextRefID]
+	} else {
+		rec.MateRef = nil
 	}
 
-	return &rec, nil
+	return rec, nil
 }
 
 func readCigarOps(br *binaryReader, n uint16) []CigarOp {
