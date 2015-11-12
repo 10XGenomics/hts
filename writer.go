@@ -21,7 +21,7 @@ type Writer struct {
 }
 
 func NewWriter(w io.Writer, h *Header, wc int) (*Writer, error) {
-	return NewWriterLevel(w, h, gzip.DefaultCompression, wc)
+	return NewWriterLevel(w, h, gzip.BestSpeed, wc)
 }
 
 func makeWriter(w io.Writer, level, wc int) *bgzf.Writer {
