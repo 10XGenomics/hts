@@ -11,6 +11,7 @@ import (
 	"code.google.com/p/biogo.bam/bgzf/gzip"
 	"io"
 	"io/ioutil"
+    "errors"
 )
 
 type Reader struct {
