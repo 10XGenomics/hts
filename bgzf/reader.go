@@ -138,8 +138,8 @@ func (bg *Reader) Read(p []byte) (int, error) {
 			} else {
 				bg.offset.File += int64(bs)
 				if bg.offset.File != bg.cr.n {
-					bg.err = ErrBlockSizeMismatch
-					break
+                    bg.err = errors.New("bgzf: use of closed writer");
+                    break
 				}
 			}
 			bg.offset.Block = 0
