@@ -163,7 +163,15 @@ func (br *Reader) Read(rec *Record) (*Record, error) {
 	return rec, nil
 }
 
-func (br *Reader) Fetch(idx *Index, rid, beg, end int) {
+type FetchIter struct {
+	leftMostOffset bgzf.Offset
+	br             *Reader
+	rid, beg, end  int
+	hasStarted     bool
+	rec            *Record
+}
+
+func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
 	// Index is specified as an input, better to be included in the Reader class
 	overlappingChunks := idx.Chunks(rid, beg, end)
 	leftMostOffset := overlappingChunks[0].Begin
@@ -173,34 +181,45 @@ func (br *Reader) Fetch(idx *Index, rid, beg, end int) {
 	//bgzfR, err := br.r.(bgzf.Reader)
 	if !ok {
 		fmt.Println("not a bgzf file")
-		return
+		return FetchIter{}, false
 	}
 	bgzfR.Seek(leftMostOffset, 0)
 
-	rec := &Record{}
-	hasStarted := false
-	for true {
-		_, err := br.Read(rec)
+	iter := FetchIter{leftMostOffset: leftMostOffset,
+		br:  br,
+		rid: rid,
+		beg: beg,
+		end: end,
+		rec: &Record{},
+	}
+	return iter, true
+}
+
+func (iter FetchIter) Next() bool {
+	_, err := iter.br.Read(iter.rec)
+	if err != nil {
+		return false
+	}
+
+	refID := int(iter.rec.Ref.id)
+	for refID < iter.rid || (refID == iter.rid && iter.rec.End() < iter.beg) {
+		_, err = iter.br.Read(iter.rec)
 		if err != nil {
-			return
+			return false
 		}
-		refID := int(rec.Ref.id)
-		if !hasStarted {
-			if refID > rid || (refID == rid && rec.Pos > end) {
-				fmt.Println("Wrong in reading the bam file")
-				return
-			} else if refID < rid || (refID == rid && rec.End() < beg) {
-				continue
-			} else if refID == rid && rec.End() > beg {
-				hasStarted = true
-			}
-		} else {
-			if refID > rid || (refID == rid && rec.Pos > end) {
-				return
-			}
-		}
+		refID = int(iter.rec.Ref.id)
+	}
+	if refID > iter.rid || (refID == iter.rid && iter.rec.Pos > iter.end) {
+		return false
+	}
+	if refID == iter.rid && iter.rec.End() > iter.beg {
+		return true
+	} else {
+		return false
 	}
 }
+
+func (iter FetchIter) Get() *Record { return iter.rec }
 
 func readCigarOps(br *binaryReader, n uint16) []CigarOp {
 	co := make([]CigarOp, n)
