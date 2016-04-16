@@ -8,6 +8,7 @@ import (
 	"code.google.com/p/biogo.bam/bgzf"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"unsafe"
 )
@@ -160,6 +161,45 @@ func (br *Reader) Read(rec *Record) (*Record, error) {
 	}
 
 	return rec, nil
+}
+
+func (br *Reader) Fetch(idx *Index, rid, beg, end int) {
+	// Index is specified as an input, better to be included in the Reader class
+	overlappingChunks := idx.Chunks(rid, beg, end)
+	leftMostOffset := overlappingChunks[0].Begin
+	bgzfR, ok := br.r.(*bgzf.Reader)
+	//bgzfR, err := br.r.(io.ReadSeeker)
+	//bgzfR, err := (&br.r).(*bgzf.Reader)
+	//bgzfR, err := br.r.(bgzf.Reader)
+	if !ok {
+		fmt.Println("not a bgzf file")
+		return
+	}
+	bgzfR.Seek(leftMostOffset, 0)
+
+	rec := &Record{}
+	hasStarted := false
+	for true {
+		_, err := br.Read(rec)
+		if err != nil {
+			return
+		}
+		refID := int(rec.Ref.id)
+		if !hasStarted {
+			if refID > rid || (refID == rid && rec.Pos > end) {
+				fmt.Println("Wrong in reading the bam file")
+				return
+			} else if refID < rid || (refID == rid && rec.End() < beg) {
+				continue
+			} else if refID == rid && rec.End() > beg {
+				hasStarted = true
+			}
+		} else {
+			if refID > rid || (refID == rid && rec.Pos > end) {
+				return
+			}
+		}
+	}
 }
 
 func readCigarOps(br *binaryReader, n uint16) []CigarOp {
