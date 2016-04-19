@@ -14,8 +14,8 @@ var (
 	bamIndex  *bam.Index
 	err       error
 	rid       int = 0
-	beg       int = 33000
-	end       int = 44000
+	beg       int = 25000
+	end       int = 55000
 )
 
 func check(e error) {
