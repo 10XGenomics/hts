@@ -174,7 +174,9 @@ type FetchIter struct {
 func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
 	// Index is specified as an input, better to be included in the Reader class
 	overlappingChunks := idx.Chunks(rid, beg, end)
+	fmt.Println("number of chunks in fetch", len(overlappingChunks))
 	leftMostOffset := overlappingChunks[0].Begin
+	fmt.Println(leftMostOffset)
 	bgzfR, ok := br.r.(*bgzf.Reader)
 	//bgzfR, err := br.r.(io.ReadSeeker)
 	//bgzfR, err := (&br.r).(*bgzf.Reader)
