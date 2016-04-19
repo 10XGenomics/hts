@@ -14,8 +14,8 @@ var (
 	bamIndex  *bam.Index
 	err       error
 	rid       int = 0
-	beg       int = 10000
-	end       int = 70000
+	beg       int = 33000
+	end       int = 44000
 )
 
 func check(e error) {
@@ -41,7 +41,7 @@ func main() {
 
 	fi, ok := bamReader.Fetch(bamIndex, rid, beg, end)
 	fmt.Println(ok)
-	if !ok {
+	if ok {
 		for fi.Next() {
 			algn := fi.Get()
 			if algn != nil {
