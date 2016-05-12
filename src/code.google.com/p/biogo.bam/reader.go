@@ -174,7 +174,9 @@ type FetchIter struct {
 func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
 	// Index is specified as an input, better to be included in the Reader class
 	overlappingChunks := idx.Chunks(rid, beg, end)
-	//fmt.Println("number of chunks in fetch", len(overlappingChunks))
+	//for i, v := range overlappingChunks {
+	//	fmt.Println(i, v.Begin, v.End)
+	//}
 	if len(overlappingChunks) <= 0 {
 		return FetchIter{}, false
 	}
@@ -203,6 +205,7 @@ func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
 func (iter FetchIter) Next() bool {
 	_, err := iter.br.Read(iter.rec)
 	if err != nil {
+		//fmt.Println("find a nil")
 		return false
 	}
 
@@ -210,16 +213,19 @@ func (iter FetchIter) Next() bool {
 	for refID < iter.rid || (refID == iter.rid && iter.rec.End() < iter.beg) {
 		_, err = iter.br.Read(iter.rec)
 		if err != nil {
+			//fmt.Println("find a nil in getting to the right chromosome")
 			return false
 		}
 		refID = int(iter.rec.Ref.id)
 	}
 	if refID > iter.rid || (refID == iter.rid && iter.rec.Pos > iter.end) {
+		//fmt.Println("reach the end of query region", iter.rid, refID, iter.end, iter.rec.Pos)
 		return false
 	}
-	if refID == iter.rid && iter.rec.End() > iter.beg {
+	if refID == iter.rid && iter.rec.End() >= iter.beg {
 		return true
 	} else {
+		//fmt.Println("Explain why it is not true", iter.rid, refID, iter.end, iter.rec.End())
 		return false
 	}
 }
