@@ -8,7 +8,6 @@ import (
 	"code.google.com/p/biogo.bam/bgzf"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"unsafe"
 )
