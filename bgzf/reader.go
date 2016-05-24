@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"code.google.com/p/biogo.bam/bgzf/flate"
 	"code.google.com/p/biogo.bam/bgzf/gzip"
-
 	"io"
 	"io/ioutil"
         "errors"
@@ -140,7 +139,7 @@ func (bg *Reader) Read(p []byte) (int, error) {
 			} else {
 				bg.offset.File += int64(bs)
 				if bg.offset.File != bg.cr.n {
-                                         bg.err =  errors.New("bgzf: use of closed writer");
+                                        bg.err =  errors.New("bgzf: use of closed writer");
 					break
 				}
 			}
