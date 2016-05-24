@@ -267,10 +267,6 @@ func CompressorStrategy(near int64) Strategy {
 func identity(chunks []Chunk) []Chunk { return chunks }
 
 func adjacent(chunks []Chunk) []Chunk {
-	// return a slice of chunks that are not overlapping
-	// i.e., previousChunk.End < previousChunk.Start
-	// this implementation is slow
-
 	if len(chunks) == 0 {
 		return nil
 	}

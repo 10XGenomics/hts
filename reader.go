@@ -171,14 +171,14 @@ type FetchIter struct {
 	rec            *Record
 }
 
-func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
+func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, error) {
 	// Index is specified as an input, better to be included in the Reader class
 	overlappingChunks := idx.Chunks(rid, beg, end)
 	//for i, v := range overlappingChunks {
 	//	fmt.Println(i, v.Begin, v.End)
 	//}
 	if len(overlappingChunks) <= 0 {
-		return FetchIter{}, false
+		return FetchIter{}, nil
 	}
 	leftMostOffset := overlappingChunks[0].Begin
 	//fmt.Println(leftMostOffset)
@@ -187,8 +187,7 @@ func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
 	//bgzfR, err := (&br.r).(*bgzf.Reader)
 	//bgzfR, err := br.r.(bgzf.Reader)
 	if !ok {
-		fmt.Println("not a bgzf file")
-		return FetchIter{}, false
+		return FetchIter{}, errors.New("the input bam file is not a proper bgzf file")
 	}
 	bgzfR.Seek(leftMostOffset, 0)
 
@@ -199,7 +198,7 @@ func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, bool) {
 		end: end,
 		rec: &Record{},
 	}
-	return iter, true
+	return iter, nil
 }
 
 func (iter FetchIter) Next() bool {

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"code.google.com/p/biogo.bam/bgzf/flate"
 	"code.google.com/p/biogo.bam/bgzf/gzip"
+
 	"errors"
 	"io"
 	"io/ioutil"
