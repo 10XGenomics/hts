@@ -162,6 +162,74 @@ func (br *Reader) Read(rec *Record) (*Record, error) {
 	return rec, nil
 }
 
+type FetchIter struct {
+	leftMostOffset bgzf.Offset
+	br             *Reader
+	rid, beg, end  int
+	hasStarted     bool
+	rec            *Record
+}
+
+func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, error) {
+	// Index is specified as an input, better to be included in the Reader class
+	overlappingChunks := idx.Chunks(rid, beg, end)
+	//for i, v := range overlappingChunks {
+	//	fmt.Println(i, v.Begin, v.End)
+	//}
+	if len(overlappingChunks) <= 0 {
+		return FetchIter{}, nil
+	}
+	leftMostOffset := overlappingChunks[0].Begin
+	//fmt.Println(leftMostOffset)
+	bgzfR, ok := br.r.(*bgzf.Reader)
+	//bgzfR, err := br.r.(io.ReadSeeker)
+	//bgzfR, err := (&br.r).(*bgzf.Reader)
+	//bgzfR, err := br.r.(bgzf.Reader)
+	if !ok {
+		return FetchIter{}, errors.New("the input bam file is not a proper bgzf file")
+	}
+	bgzfR.Seek(leftMostOffset, 0)
+
+	iter := FetchIter{leftMostOffset: leftMostOffset,
+		br:  br,
+		rid: rid,
+		beg: beg,
+		end: end,
+		rec: &Record{},
+	}
+	return iter, nil
+}
+
+func (iter FetchIter) Next() bool {
+	_, err := iter.br.Read(iter.rec)
+	if err != nil {
+		//fmt.Println("find a nil")
+		return false
+	}
+
+	refID := int(iter.rec.Ref.id)
+	for refID < iter.rid || (refID == iter.rid && iter.rec.End() < iter.beg) {
+		_, err = iter.br.Read(iter.rec)
+		if err != nil {
+			//fmt.Println("find a nil in getting to the right chromosome")
+			return false
+		}
+		refID = int(iter.rec.Ref.id)
+	}
+	if refID > iter.rid || (refID == iter.rid && iter.rec.Pos > iter.end) {
+		//fmt.Println("reach the end of query region", iter.rid, refID, iter.end, iter.rec.Pos)
+		return false
+	}
+	if refID == iter.rid && iter.rec.End() >= iter.beg {
+		return true
+	} else {
+		//fmt.Println("Explain why it is not true", iter.rid, refID, iter.end, iter.rec.End())
+		return false
+	}
+}
+
+func (iter FetchIter) Get() *Record { return iter.rec }
+
 func readCigarOps(br *binaryReader, n uint16) []CigarOp {
 	co := make([]CigarOp, n)
 	for i := range co {
