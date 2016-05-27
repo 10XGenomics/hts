@@ -132,7 +132,7 @@ func (a Aux) Value() interface{} {
 	case 'I':
 		return binary.LittleEndian.Uint32([]byte(a[4:8]))
 	case 'f':
-		return math.Float32frombits(binary.LittleEndian.Uint32([]byte(a[4:8])))
+		return math.Float32frombits(binary.LittleEndian.Uint32([]byte(a[3:7])))
 	case 'Z': // Z and H Require that parsing stops before the terminating zero.
 		return string(a[3:])
 	case 'H':
