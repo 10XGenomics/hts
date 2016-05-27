@@ -124,15 +124,15 @@ func (a Aux) Value() interface{} {
 	case 'C':
 		return uint8(a[3])
 	case 's':
-		return int16(binary.LittleEndian.Uint16([]byte(a[4:6])))
+		return int16(binary.LittleEndian.Uint16([]byte(a[3:5])))
 	case 'S':
-		return binary.LittleEndian.Uint16([]byte(a[4:6]))
+		return binary.LittleEndian.Uint16([]byte(a[3:5]))
 	case 'i':
-		return int32(binary.LittleEndian.Uint32([]byte(a[4:8])))
+		return int32(binary.LittleEndian.Uint32([]byte(a[3:7])))
 	case 'I':
-		return binary.LittleEndian.Uint32([]byte(a[4:8]))
+		return binary.LittleEndian.Uint32([]byte(a[3:7]))
 	case 'f':
-		return math.Float32frombits(binary.LittleEndian.Uint32([]byte(a[4:8])))
+		return math.Float32frombits(binary.LittleEndian.Uint32([]byte(a[3:7])))
 	case 'Z': // Z and H Require that parsing stops before the terminating zero.
 		return string(a[3:])
 	case 'H':
