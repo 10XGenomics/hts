@@ -201,6 +201,11 @@ func (br *Reader) Fetch(idx *Index, rid, beg, end int) (FetchIter, error) {
 }
 
 func (iter FetchIter) Next() bool {
+    // Bail out in case of empty iterator
+    if iter.br == nil {
+        return false
+    }
+
 	_, err := iter.br.Read(iter.rec)
 	if err != nil {
 		//fmt.Println("find a nil")
