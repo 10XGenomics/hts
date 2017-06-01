@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io"
 	"unsafe"
+	"fmt"
 )
 
 type Reader struct {
@@ -207,7 +208,7 @@ func (iter FetchIter) Next() bool {
     }
 
 	_, err := iter.br.Read(iter.rec)
-	if err != nil {
+	if err != nil || iter.rec.Ref == nil {
 		//fmt.Println("find a nil")
 		return false
 	}
