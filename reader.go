@@ -10,7 +10,6 @@ import (
 	"errors"
 	"io"
 	"unsafe"
-	"fmt"
 )
 
 type Reader struct {
