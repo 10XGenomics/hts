@@ -127,6 +127,14 @@ func (r *Record) Reference() *Reference {
 	return r.Ref
 }
 
+func (r *Record) ReferenceID() int {
+	if r.Ref == nil {
+		return -1
+	} else {
+		return int(r.Ref.id)
+	}
+}
+
 // Tag returns an Aux tag whose tag ID matches the first two bytes of tag and true.
 // If no tag matches, nil and false are returned.
 func (r *Record) Tag(tag []byte) (v Aux, ok bool) {

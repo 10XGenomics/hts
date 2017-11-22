@@ -212,16 +212,16 @@ func (iter FetchIter) Next() bool {
 		return false
 	}
 
-	refID := int(iter.rec.Ref.id)
+	refID := iter.rec.ReferenceID()
 	for refID < iter.rid || (refID == iter.rid && iter.rec.End() < iter.beg) {
 		_, err = iter.br.Read(iter.rec)
 		if err != nil {
 			//fmt.Println("find a nil in getting to the right chromosome")
 			return false
 		}
-		refID = int(iter.rec.Ref.id)
+		refID = iter.rec.ReferenceID()
 	}
-	if refID > iter.rid || (refID == iter.rid && iter.rec.Pos > iter.end) {
+	if refID > iter.rid || refID == -1 || (refID == iter.rid && iter.rec.Pos > iter.end) {
 		//fmt.Println("reach the end of query region", iter.rid, refID, iter.end, iter.rec.Pos)
 		return false
 	}
